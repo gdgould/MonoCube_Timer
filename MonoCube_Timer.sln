@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29609.76
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoCube_Timer", "MonoCube_Timer\MonoCube_Timer.csproj", "{F3F9EFFD-1AD1-49FD-939C-02A2BCA0BF29}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F3F9EFFD-1AD1-49FD-939C-02A2BCA0BF29}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F3F9EFFD-1AD1-49FD-939C-02A2BCA0BF29}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F3F9EFFD-1AD1-49FD-939C-02A2BCA0BF29}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F3F9EFFD-1AD1-49FD-939C-02A2BCA0BF29}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B7E6C9B6-E2F9-44F5-B235-D2654AF76F02}
+	EndGlobalSection
+EndGlobal
