@@ -12,6 +12,11 @@ MonoCube Timer is built using the MonoGame Framework, which supports Windows, Ma
 Functionality on any operating system not listed above is not guarenteed.  In particular, Android and iOS/iPadOS will almost certainly not function properly, due to low screen resolution (under 1200x640), and lack of touch screen support.  Other devices with screen resolution under 1200x640 may also experience problems.
 
 
+## Credits
+
+Icon created by Juel Gould.
+
+
 ## License Information:
     
 MonoCube Timer: A timing program primarily intended for speedcubing.

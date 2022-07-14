@@ -1,5 +1,5 @@
 ﻿/*  MonoCube Timer: A timing program primarily intended for speedcubing.
-    Copyright (C) 2022, Greyson Gould
+    Copyright (C) 2021-2022, Greyson Gould
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 3, as
