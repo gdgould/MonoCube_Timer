@@ -114,6 +114,7 @@ namespace MonoCube_Timer
         public void SetTime(Time time)
         {
             this.displayTime = time;
+            this.ShouldDeleteTime = false;
         }
 
 
@@ -132,7 +133,8 @@ namespace MonoCube_Timer
         /// <returns></returns>
         public Time GetTime()
         {
-            return new Time(displayTime.TrueMilliseconds, displayTime.Plus2, displayTime.DNF, displayTime.DateRecorded, displayTime.Puzzle, displayTime.TextColor, displayTime.BackColor, displayTime.Scramble, textBox.Text.ToString());
+            displayTime.Comments = textBox.Text.ToString();
+            return displayTime;
         }
 
         /// <summary>

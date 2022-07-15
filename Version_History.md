@@ -7,10 +7,17 @@ Adding cross-platform functionality...
 ### Features
 
 * Cross-platform file system support added.  The program should now hopefully be functional on OSX and Linux.  THIS HAS NOT BEEN TESTED.
+* Added better filtering support -- when showing only PB's, their actual ranks are retained, instead of reverting to 1, 2, 3, ....
 
 ### Bugs
 
 * Fixed a bug where the Logs folder would not auto-generate on a new install, causing an instant crash with no logging.
+* Fixed a bug where after deleting an old time using the stats window delete button, simply closing the dialog would cause whatever time was being displayed to be deleted (for the rest of the session).
+
+### Code
+
+* Added Filters and the ability to filter ScrollBox displays by PB status, comments, or date.
+* Removed all unnecessary copying of Time lists between ScrollBoxes and the main data storage.
 
 ## 0.5.0.0 (July 11, 2022)
 
