@@ -34,12 +34,12 @@ namespace MonoCube_Timer
     /// <summary>
     /// Stores an average of multiple times, with a start/end date, puzzle type, and other information.
     /// </summary>
-    public struct Average
+    public class Average
     {
         /// <summary>
         /// The true average time in milliseconds.
         /// </summary>
-        public int Milliseconds { get; }
+        public int Milliseconds { get; set; }
         /// <summary>
         /// An time used for comparison, in milliseconds.  DNF's are greater than any other time.
         /// </summary>
@@ -58,14 +58,19 @@ namespace MonoCube_Timer
             }
         }
 
-        public DateTime StartDate { get; }
-        public DateTime EndDate { get; }
-        public string Comments { get; }
-        public string Puzzle { get; }
-        public bool DNF { get; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public string Comments { get; set; }
+        public string Puzzle { get; set; }
+        public bool DNF { get; set; }
 
-        public Color TextColor { get; }
-        public Color? BackColor { get; }
+        public Color TextColor { get; set; }
+        public Color? BackColor { get; set; }
+
+        public Average()
+        {
+
+        }
 
         /// <summary>
         /// Produces a new Average with the specified properties.
@@ -168,6 +173,10 @@ namespace MonoCube_Timer
         {
             return $"{this.Milliseconds.ToString()},{this.DNF.ToString()},{this.StartDate.ToString()},{this.EndDate.ToString()},{this.Puzzle},{this.Comments}";
         }
+        public Average Copy()
+        {
+            return new Average(this.Milliseconds, this.DNF, this.StartDate, this.EndDate, this.Puzzle, this.TextColor, this.BackColor, this.Comments);
+        }
 
         public static bool operator >(Average a, Average b) => a.ComparisonMilliseconds > b.ComparisonMilliseconds;
         public static bool operator <(Average a, Average b) => a.ComparisonMilliseconds < b.ComparisonMilliseconds;
@@ -208,7 +217,7 @@ namespace MonoCube_Timer
     /// <summary>
     /// Stores a single time, with puzzle type, comments, and other information.
     /// </summary>
-    public struct Time
+    public class Time
     {
 
         private int milliseconds;
@@ -229,11 +238,6 @@ namespace MonoCube_Timer
                     return milliseconds;
                 }
             }
-
-            set
-            {
-                this.milliseconds = Milliseconds;
-            }
         }
         /// <summary>
         /// The true time in milliseconds, disregarding +2's.
@@ -243,6 +247,10 @@ namespace MonoCube_Timer
             get
             {
                 return milliseconds;
+            }
+            set
+            {
+                this.milliseconds = value;
             }
         }
         /// <summary>
@@ -263,17 +271,22 @@ namespace MonoCube_Timer
             }
         }
 
-        public string Filepath { get; }
-        public bool Plus2 { get; }
-        public bool DNF { get; }
+        public string Filepath { get; set; }
+        public bool Plus2 { get; set; }
+        public bool DNF { get; set; }
 
-        public string Scramble { get; }
-        public DateTime DateRecorded { get; }
-        public string Comments { get; }
-        public string Puzzle { get; }
+        public string Scramble { get; set; }
+        public DateTime DateRecorded { get; set; }
+        public string Comments { get; set; }
+        public string Puzzle { get; set; }
 
-        public Color TextColor { get; }
+        public Color TextColor { get; set; }
         public Color? BackColor { get; set; }
+
+        public Time()
+        {
+
+        }
 
         /// <summary>
         /// Produces a new Time with the specified properties, using the current date.
@@ -333,6 +346,10 @@ namespace MonoCube_Timer
         public override string ToString()
         {
             return $"{this.TrueMilliseconds.ToString()},{this.Plus2.ToString().ToLower()},{this.DNF.ToString().ToLower()},{this.DateRecorded.ToString()},{this.Puzzle},{this.Scramble},{this.Comments}";
+        }
+        public Time Copy()
+        {
+            return new Time(this.TrueMilliseconds, this.Plus2, this.DNF, this.DateRecorded, this.Puzzle, this.TextColor, this.BackColor, this.Scramble, this.Comments, this.Filepath);
         }
 
         public static bool operator >(Time a, Time b) => a.ComparisonMilliseconds > b.ComparisonMilliseconds;
@@ -821,10 +838,10 @@ namespace MonoCube_Timer
 
             PBToggleButton.Location = new Vector2(360 - PBToggleButton.Width, PBToggleButton.Location.Y);
 
-            AllTimes.SetPBRender(value);
+            AllTimes.UpdateFilter(new Filter(value, false));
             for (int i = 0; i < AllAverages.Length; i++)
             {
-                AllAverages[i].SetPBRender(value);
+                AllAverages[i].UpdateFilter(new Filter(value, false));
             }
         }
 
@@ -964,13 +981,11 @@ namespace MonoCube_Timer
 
             CurrentSession.BackColor = Constants.GetColor("ContainerColor");
             CurrentSession.DisplaySeparaterLines = true;
-            CurrentSession.DisplayState = ContainerDisplayState.Buttons;
+            CurrentSession.DisplayState = ContainerDisplayState.InvertButtons;
 
             CurrentSession.Enabled = true;
             CurrentSession.Visible = true;
             CurrentSession.UpdateCollisionDetection();
-            CurrentSession.TimeChanged += TimeChanged;
-            CurrentSession.TimeDeleted += TimeDeleted;
             CurrentSession.DisplayTime += StatsWindow_Opening;
 
 
@@ -984,6 +999,8 @@ namespace MonoCube_Timer
 
             AllTimes.Enabled = true;
             AllTimes.Visible = true;
+            CurrentSession.TimeChanged += TimeChanged;
+            CurrentSession.TimeDeleted += TimeDeleted;
             AllTimes.DisplayTime += StatsWindow_Opening;
 
 
@@ -1190,7 +1207,7 @@ namespace MonoCube_Timer
             }
 
             statsTimeViewed = time;
-            timeStatsWindow.SetTime(time);
+            timeStatsWindow.SetTime(time.Copy());
             timeStatsWindow.RefreshText();
 
             statsDisplaying = true;
@@ -1210,7 +1227,8 @@ namespace MonoCube_Timer
 
             if (arg1 is TimeDisplayWindow)
             {
-                if (((TimeDisplayWindow)arg1).ShouldDeleteTime)
+                TimeDisplayWindow tdWindow = (TimeDisplayWindow)arg1;
+                if (tdWindow.ShouldDeleteTime)
                 {
                     if (statsTimeViewed.TextColor == Constants.GetColor("TimeTextCurrentColor"))
                     {
@@ -1222,16 +1240,16 @@ namespace MonoCube_Timer
                         OldTimeDeleted(statsTimeViewed);
                     }
                 }
-                else if (((TimeDisplayWindow)arg1).CanEdit)
+                else if (tdWindow.CanEdit)
                 {
                     if (statsTimeViewed.TextColor == Constants.GetColor("TimeTextCurrentColor"))
                     {
-                        TimeChanged(((TimeDisplayWindow)arg1).GetTime(), statsTimeViewed);
+                        TimeChanged(tdWindow.GetTime(), statsTimeViewed);
                     }
                     else
                     {
-                        importData.ChangeOldTime(((TimeDisplayWindow)arg1).GetTime(), statsTimeViewed);
-                        OldTimeChanged(((TimeDisplayWindow)arg1).GetTime(), statsTimeViewed);
+                        importData.ChangeOldTime(tdWindow.GetTime(), statsTimeViewed);
+                        OldTimeChanged(tdWindow.GetTime(), statsTimeViewed);
                     }
                 }
             }
@@ -1318,17 +1336,18 @@ namespace MonoCube_Timer
         /// <param name="oldTime">The Time without the new changes.</param>
         private void TimeChanged(Time newTime, Time oldTime)
         {
-            for (int i = 0; i < CurrentSessionTimes[currentPuzzle].Count(); i++)
+            int index = CurrentSessionTimes[currentPuzzle].IndexOf(oldTime);
+            if (index != -1)
             {
-                if (CurrentSessionTimes[currentPuzzle][i].DateRecorded == oldTime.DateRecorded && CurrentSessionTimes[currentPuzzle][i].Milliseconds == oldTime.Milliseconds)
-                {
-                    CurrentSessionTimes[currentPuzzle][i] = newTime;
-                    UpdateDisplays();
-                    Log.Info($"Time \"{oldTime.ToString()}\" sucessfully updated to \"{newTime.ToString()}\".");
-                    return;
-                }
+                CurrentSessionTimes[currentPuzzle][index] = newTime;
+                Log.Info($"Time \"{oldTime.ToString()}\" sucessfully updated to \"{newTime.ToString()}\".");
             }
-            Log.Error($"Time \"{oldTime.ToString()}\" not found while attempting to update to \"{newTime.ToString()}\".");
+            else
+            {
+                Log.Warn($"Time \"{oldTime.ToString()}\" not found while attempting to update to \"{newTime.ToString()}\".");
+            }
+
+            UpdateDisplays();
         }
         /// <summary>
         /// Triggered when a time from a past session is changed somehow (+2, DNF, comments changed, etc.).
@@ -1337,17 +1356,18 @@ namespace MonoCube_Timer
         /// <param name="oldTime">The Time without the new changes.</param>
         private void OldTimeChanged(Time newTime, Time oldTime)
         {
-            for (int i = 0; i < AllTimeTimes[currentPuzzle].Count(); i++)
+            int index = AllTimeTimes[currentPuzzle].IndexOf(oldTime);
+            if (index != -1)
             {
-                if (AllTimeTimes[currentPuzzle][i].DateRecorded == oldTime.DateRecorded && AllTimeTimes[currentPuzzle][i].Milliseconds == oldTime.Milliseconds)
-                {
-                    AllTimeTimes[currentPuzzle][i] = newTime;
-                    UpdateDisplays();
-                    Log.Info($"Old time \"{oldTime.ToString()}\" sucessfully updated to \"{newTime.ToString()}\".");
-                    return;
-                }
+                AllTimeTimes[currentPuzzle][index] = newTime;
+                Log.Info($"Old time \"{oldTime.ToString()}\" sucessfully updated to \"{newTime.ToString()}\".");
             }
-            Log.Error($"Old time \"{oldTime.ToString()}\" not found while attempting to update to \"{newTime.ToString()}\".");
+            else
+            {
+                Log.Warn($"Old time \"{oldTime.ToString()}\" not found while attempting to update to \"{newTime.ToString()}\".");
+            }
+
+            UpdateDisplays();
         }
         /// <summary>
         /// Triggered when a time should be deleted
@@ -1355,17 +1375,16 @@ namespace MonoCube_Timer
         /// <param name="oldTime">The Time to be deleted.</param>
         private void TimeDeleted(Time oldTime)
         {
-            for (int i = 0; i < CurrentSessionTimes[currentPuzzle].Count(); i++)
+            if (CurrentSessionTimes[currentPuzzle].Remove(oldTime))
             {
-                if (CurrentSessionTimes[currentPuzzle][i].DateRecorded == oldTime.DateRecorded && CurrentSessionTimes[currentPuzzle][i].Milliseconds == oldTime.Milliseconds)
-                {
-                    CurrentSessionTimes[currentPuzzle].RemoveAt(i);
-                    UpdateDisplays();
-                    Log.Info($"Time {oldTime.ToString()} sucessfully deleted.");
-                    return;
-                }
+                Log.Info($"Time {oldTime.ToString()} sucessfully deleted.");
             }
-            Log.Error($"Time {oldTime.ToString()} not found while attempting to delete.");
+            else
+            {
+                Log.Warn($"Time {oldTime.ToString()} not found while attempting to delete.");
+            }
+
+            UpdateDisplays();
         }
         /// <summary>
         /// Triggered when a time from a past session should be deleted
@@ -1373,17 +1392,16 @@ namespace MonoCube_Timer
         /// <param name="oldTime">The Time to be deleted.</param>
         private void OldTimeDeleted(Time oldTime)
         {
-            for (int i = 0; i < AllTimeTimes[currentPuzzle].Count(); i++)
+            if (AllTimeTimes[currentPuzzle].Remove(oldTime))
             {
-                if (AllTimeTimes[currentPuzzle][i].DateRecorded == oldTime.DateRecorded && AllTimeTimes[currentPuzzle][i].Milliseconds == oldTime.Milliseconds)
-                {
-                    AllTimeTimes[currentPuzzle].RemoveAt(i);
-                    UpdateDisplays();
-                    Log.Info($"Old time {oldTime.ToString()} sucessfully deleted.");
-                    return;
-                }
+                Log.Info($"Old time {oldTime.ToString()} sucessfully deleted.");
             }
-            Log.Error($"Old time {oldTime.ToString()} not found while attempting to delete.");
+            else
+            {
+                Log.Warn($"Old time {oldTime.ToString()} not found while attempting to delete.");
+            }
+
+            UpdateDisplays();
         }
         /// <summary>
         /// Adds a new Time of the specified number of milliseconds to the current puzzle's session times.
@@ -1426,7 +1444,6 @@ namespace MonoCube_Timer
 
             UpdatePBBackgroundColors(); // Must happen first so that the changes are reflected visually
 
-            UpdateCurrentScrollbox();
             UpdateScrollBoxes();
             UpdateSessionStatistics();
             UpdateAllTimeStatistics();
@@ -1437,35 +1454,23 @@ namespace MonoCube_Timer
         public void UpdatePBBackgroundColors()
         {
             Time oldTime;
-            Time newTime;
             for (int i = 0; i < CurrentSessionTimes[currentPuzzle].Count(); i++)
             {
                 oldTime = CurrentSessionTimes[currentPuzzle][i];
-
-                newTime = new Time(oldTime.TrueMilliseconds, oldTime.Plus2, oldTime.DNF, oldTime.DateRecorded, oldTime.Puzzle, oldTime.TextColor, IsPB(oldTime.ComparisonMilliseconds, oldTime.DateRecorded) ? (Color?)Constants.GetColor("TimeBoxPBColor") : null, oldTime.Scramble, oldTime.Comments);
-                CurrentSessionTimes[currentPuzzle][i] = newTime;
+                oldTime.BackColor = IsPB(oldTime.ComparisonMilliseconds, oldTime.DateRecorded) ? (Color?)Constants.GetColor("TimeBoxPBColor") : null;
             }
             Log.Debug("PB background colors updated.");
-        }
-        /// <summary>
-        /// Updates the scrollbox containing current session times
-        /// </summary>
-        private void UpdateCurrentScrollbox()
-        {
-            Time[] temp = new Time[CurrentSessionTimes[currentPuzzle].Count()];
-            CurrentSessionTimes[currentPuzzle].CopyTo(temp);
-            List<Time> temp2 = temp.ToList();
-            temp2.Reverse();
-
-            CurrentSession.ChangeData(temp2);
-            Log.Debug("Current times scrollbox updated.");
         }
         /// <summary>
         /// Updates the scrollboxes containing all times and all averages
         /// </summary>
         private void UpdateScrollBoxes()
         {
+            CurrentSession.ChangeData(CurrentSessionTimes[currentPuzzle]);
+
+            // Dangerous, since updates made to these times will not propogate.  This still works because AllTimes does not ever change data.
             AllTimes.ChangeData(DataProcessing.MergeArrays(AllTimeTimes[currentPuzzle].ToArray(), DataProcessing.MergeSort(CurrentSessionTimes[currentPuzzle].ToArray())).ToList());
+            AllTimes.UpdateFilter();
 
             CurrentSessionAverages[currentPuzzle] = importData.UpdateSessionAverages(LastThousandTimes[currentPuzzle], CurrentSessionTimes[currentPuzzle], AllTimeAverages[currentPuzzle]);
             for (int i = 0; i < AllAverages.Count(); i++)
@@ -1500,9 +1505,9 @@ namespace MonoCube_Timer
             {
                 if (CurrentSessionTimes[currentPuzzle].Count() >= maxLengths[i])
                 {
-                    Average current = new Average(CurrentSessionTimes[currentPuzzle].GetRange(CurrentSessionTimes[currentPuzzle].Count() - maxLengths[i], maxLengths[i]), Color.White, null, true);
+                    Average current = new Average(CurrentSessionTimes[currentPuzzle].GetRange(CurrentSessionTimes[currentPuzzle].Count() - maxLengths[i], maxLengths[i]), Color.White, null, i == 1 || i == 2);
 
-                    SessionStatistics.EditText(sessionTimeIndices[2 * i + 2], current.DNF ? "DNF" : DataProcessing.ConvertMillisecondsToShortString(new Average(CurrentSessionTimes[currentPuzzle].GetRange(CurrentSessionTimes[currentPuzzle].Count() - maxLengths[i], maxLengths[i]), Color.White, null, i == 1 || i == 2).Milliseconds));
+                    SessionStatistics.EditText(sessionTimeIndices[2 * i + 2], current.DNF ? "DNF" : DataProcessing.ConvertMillisecondsToShortString(current.Milliseconds));
                     SessionStatistics.EditText(sessionTimeIndices[2 * i + 3], DataProcessing.ConvertMillisecondsToShortString(importData.GetBest(sessionExclusiveAverages[i]).Milliseconds));
                 }
                 else

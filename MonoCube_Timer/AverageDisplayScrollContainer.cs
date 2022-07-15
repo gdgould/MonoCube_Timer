@@ -9,8 +9,8 @@ namespace MonoCube_Timer
 {
     class AverageDisplayScrollContainer : ScrollContainer
     {
-        private List<Average> displayAverages;  // Can be set to contain just PBs
-        private List<Average> allAverages;      // Always contains all the averages
+        private List<Average> allAverages; // Stores the full data of the class (reference data)
+        //private List<int> filterTimes; // Stores the indices of averages to be displayed, and can be configured
 
         /// <summary>
         /// A scroll container specially designed to display Averages.  No +2, DNF, or delete buttons, but it can display date ranges.
@@ -21,8 +21,9 @@ namespace MonoCube_Timer
         /// <param name="textFontBold"></param>
         public AverageDisplayScrollContainer(GameContent gameContent, SpriteBatch spriteBatch, SpriteFont textFont, SpriteFont textFontBold) : base(gameContent, spriteBatch, textFont, textFontBold)
         {
-            displayAverages = new List<Average>();
+            allAverages = new List<Average>();
             this.ButtonsEnabled = false; //So that we cannot view the stats of averages, which have no stats currently.
+            this.DisplayState = ContainerDisplayState.Averages; // Disables the displaying of times when clicked
         }
 
 
@@ -33,30 +34,34 @@ namespace MonoCube_Timer
         public void ChangeData(List<Average> time)
         {
             this.allAverages = time;
-            UpdateDisplayTimes();
+            UpdateFilter();
         }
 
+
         /// <summary>
-        /// Updates the internal field that controls what averages are displayed, independent of what averages are being stored.
+        /// Filters displayed times by the given parameters.
         /// </summary>
-        public override void UpdateDisplayTimes()
+        /// <param name="displayPBOnly">Specifies whether to display only averages that are PB's.</param>
+        /// <param name="displayCommentOnly">No effect on Averages.</param>
+        /// <param name="minDate">Specifies the earliest start date displayed averages may have, inclusive.</param>
+        /// <param name="maxDate">Specifies the latest end date displayed averages may have, inclusive.</param>
+        public override void UpdateFilter(Filter f)
         {
-            // RenderPBs allows us to only display averages that are pbs
-            if (!RenderPBs)
+            this.filter = f;
+            filterTimes = new List<int>();
+
+            for (int i = 0; i < allAverages.Count(); i++)
             {
-                this.displayAverages = new List<Average>();
-                this.displayAverages = this.allAverages;
-            }
-            else
-            {
-                this.displayAverages = new List<Average>();
-                for (int i = 0; i < allAverages.Count(); i++)
+                if ((!f.DisplayPBOnly || allAverages[i].BackColor == Constants.GetColor("TimeBoxPBColor")) &&
+                    f.MinDate <= allAverages[i].StartDate && f.MaxDate >= allAverages[i].EndDate)
                 {
-                    if (allAverages[i].BackColor == Constants.GetColor("TimeBoxPBColor"))
-                    {
-                        displayAverages.Add(allAverages[i]);
-                    }
+                    filterTimes.Add(i);
                 }
+            }
+
+            if (DisplayState == ContainerDisplayState.InvertButtons || DisplayState == ContainerDisplayState.InvertDates)
+            {
+                filterTimes.Reverse();
             }
         }
 
@@ -66,7 +71,7 @@ namespace MonoCube_Timer
         /// <returns></returns>
         public int GetLengthofAverages()
         {
-            return displayAverages.Count();
+            return filterTimes.Count();
         }
 
 
@@ -76,16 +81,28 @@ namespace MonoCube_Timer
         protected override void DrawTimes()
         {
             // Sets the number offset so that where there are numbers of different lengths on screen (ie 99 and 100), the longer one is still fully within the time box
-            NumberOffset = 10 * Math.Max(3, ((VerticalOffset + Size.Height - 2 * padding) / timeHeight + 1).ToString().Length + 1);
+            int filterTopIndex = (VerticalOffset + Size.Height - 2 * padding) / timeHeight + 1;
+            int filterBottomIndex = VerticalOffset / timeHeight;
+            int maxDisplayedLength = 0;
+            if (filterTopIndex < filterTimes.Count())
+            {
+                maxDisplayedLength = filterTimes[filterTopIndex].ToString().Length;
+            }
+            if (filterBottomIndex < filterTimes.Count())
+            {
+                maxDisplayedLength = Math.Max(maxDisplayedLength, filterTimes[filterBottomIndex].ToString().Length);
+            }
 
-            for (int i = Math.Max(0, VerticalOffset / timeHeight); i < displayAverages.Count(); i++)
+            NumberOffset = 10 * Math.Max(3, maxDisplayedLength + 1);
+
+            for (int i = Math.Max(0, VerticalOffset / timeHeight); i < filterTimes.Count(); i++)
             {
                 if (padding + i * timeHeight - VerticalOffset > this.Size.Height - padding)
                 {
                     break;
                 }
 
-                DrawTimeBox(displayAverages[i], new Vector2(Location.X + padding, Location.Y + padding + i * timeHeight - VerticalOffset), this.Size.Width - 2 * padding, displayAverages[i].BackColor == null ? Constants.GetColor("TimeBoxDefaultColor") : (Color)displayAverages[i].BackColor, i + 1);
+                DrawTimeBox(allAverages[filterTimes[i]], new Vector2(Location.X + padding, Location.Y + padding + i * timeHeight - VerticalOffset), this.Size.Width - 2 * padding, allAverages[filterTimes[i]].BackColor == null ? Constants.GetColor("TimeBoxDefaultColor") : (Color)allAverages[filterTimes[i]].BackColor, filterTimes[i] + 1);
             }
 
             // Re-draws the top and bottom bars of the scrollbox so that the time boxes appear to be moving under the edges as they scroll
