@@ -4,7 +4,7 @@ MonoCube Timer is an easy-to-use timer intended for speedcubing, with a particul
 
 ## Supported Platforms
 
-MonoCube Timer is built using the MonoGame Framework, which supports Windows, MacOs, Linux, Android, and iOS/iPadOS.  (For a full list of supported platforms please see <https://www.monogame.net/>).
+MonoCube Timer is built using the MonoGame Framework, which supports Windows, MacOs, Linux, Android, and iOS/iPadOS.  (For a full list of supported platforms please see <https://www.monogame.net/>.
 
 <b>NOTE</b>: MonoCube Timer 0.5.0.1 has been tested on the following platforms:
 * Windows 10 (1920x1080)

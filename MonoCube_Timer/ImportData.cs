@@ -238,7 +238,7 @@ namespace MonoCube_Timer
             int todaysId = 0;
             for (int i = 0; i < sessions.Length; i++)
             {
-                sessions[i] = sessions[i].Split(Path.DirectorySeparatorChar)[sessions[i].Split(Path.DirectorySeparatorChar).Length - 1].Split('.')[0];
+                sessions[i] = sessions[i].Split(Path.PathSeparator)[sessions[i].Split(Path.PathSeparator).Length - 1].Split('.')[0];
                 if (sessions[i].Length >= 8 && sessions[i].Substring(0, 8) == GetTodaysFileName())
                 {
                     int result = -1;
@@ -284,7 +284,7 @@ namespace MonoCube_Timer
 
             numberOfTimes++; //To account for the zeroed time inserted at the start of the list.
 
-            returnList.Add(new Time());
+            returnList.Add(new Time(0, false, false, "3x3", Constants.GetColor("TimeTextDefaultColor"), null));
             List<Time> fileList = new List<Time>();
 
             string[] subFiles = GetAllFilesAndSubfiles(Path.Combine(AppDataPath, "Puzzles", GetPuzzleName(puzzle)));
@@ -327,7 +327,7 @@ namespace MonoCube_Timer
 
             if (count == 1)
             {
-                time.BackColor = Constants.GetColor("TimeBoxPBColor");
+                time = new Time(time.TrueMilliseconds, time.Plus2, time.DNF, time.DateRecorded, time.Puzzle, time.TextColor, Constants.GetColor("TimeBoxPBColor"), time.Scramble, time.Comments, time.Filepath);
             }
             list.Insert(count, time);
         }
@@ -346,20 +346,20 @@ namespace MonoCube_Timer
         /// <param name="list">A sorted list of Averages.</param>
         /// <param name="average">The Average to be inserted.</param>
         /// <param name="betterThanPreviousPB">A boolean indicating whether this time is better than the previous PB, and thus needs a special back color.</param>
-        public void Insert(ref List<Average> list, Average average, bool betterThanPreviousPB)
+        public void Insert(ref List<Average> list, Average time, bool betterThanPreviousPB)
         {
             int count = list.Count();
-            while (average.ComparisonMilliseconds < list[count - 1].ComparisonMilliseconds)
+            while (time.ComparisonMilliseconds < list[count - 1].ComparisonMilliseconds)
             {
                 count--;
             }
 
             if (count == 1 && betterThanPreviousPB)
             {
-                average.BackColor = Constants.GetColor("TimeBoxPBColor");
+                time = new Average(time.Milliseconds, time.DNF, time.StartDate, time.EndDate, time.Puzzle, time.TextColor, Constants.GetColor("TimeBoxPBColor"), time.Comments);
             }
 
-            list.Insert(count, average);
+            list.Insert(count, time);
         }
         /// <summary>
         /// Pulls all the times for the specified puzzle from file, computes averages, and sorts them.
@@ -404,7 +404,7 @@ namespace MonoCube_Timer
             for (int i = 0; i < 7; i++)
             {
                 returnList[i] = new List<Average>();
-                returnList[i].Add(new Average());
+                returnList[i].Add(new Average(0, false, DateTime.Now, DateTime.Now, "3x3", Constants.GetColor("TimeTextDefaultColor"), null));
             }
 
             List<Time> fileList = new List<Time>();
@@ -482,7 +482,7 @@ namespace MonoCube_Timer
             for (int i = 0; i < 7; i++)
             {
                 returnList[i] = new List<Average>();
-                returnList[i].Add(new Average());
+                returnList[i].Add(new Average(0, false, DateTime.Now, DateTime.Now, "3x3", Constants.GetColor("TimeTextDefaultColor"), null));
             }
 
             RollingAverage[] averages = new RollingAverage[7];
@@ -668,7 +668,7 @@ namespace MonoCube_Timer
             for (int i = 0; i < returnList.Count(); i++)
             {
                 // Checks that the file is the correct number of folders in, and that its name is fully numeric
-                string[] temp = returnList[i].Split(Path.DirectorySeparatorChar);
+                string[] temp = returnList[i].Split(Path.PathSeparator);
                 // The 6 represents 6 layers in: MonoCubeTimer\Puzzles\Name\Year\Month\File.csv
                 if (temp.Length < 6 || temp[temp.Length - 6] != "MonoCubeTimer")
                 {

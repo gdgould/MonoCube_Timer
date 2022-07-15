@@ -7,30 +7,7 @@ using Microsoft.Xna.Framework.Input;
 
 namespace MonoCube_Timer
 {
-    // Invert reverses the order of display from the data list, and also reverses numbering.
-    public enum ContainerDisplayState { Nothing = 0, Averages, Buttons, Dates, InvertButtons, InvertDates }
-    public struct Filter
-    {
-        public bool DisplayPBOnly { get; }
-        public bool DisplayCommentOnly { get; }
-        public DateTime MinDate { get; }
-        public DateTime MaxDate { get; }
-
-        public Filter(bool displayPBOnly, bool displayCommentOnly)
-        {
-            this.DisplayPBOnly = displayPBOnly;
-            this.DisplayCommentOnly = displayCommentOnly;
-            this.MinDate = DateTime.MinValue;
-            this.MaxDate = DateTime.MaxValue;
-        }
-        public Filter(bool displayPBOnly, bool displayCommentOnly, DateTime minDate, DateTime maxDate)
-        {
-            this.DisplayPBOnly = displayPBOnly;
-            this.DisplayCommentOnly = displayCommentOnly;
-            this.MinDate = minDate;
-            this.MaxDate = maxDate;
-        }
-    }
+    public enum ContainerDisplayState { Nothing = 0, Buttons = 1, Dates = 2 }
     class ScrollContainer : Control
     {
         private System.Drawing.Size size;
@@ -51,6 +28,7 @@ namespace MonoCube_Timer
         protected SpriteFont textFont;
         protected SpriteFont textFontBold;
 
+        protected bool RenderPBs;
 
         public int NumberOffset { get; set; }
         public int TimeOffset { get; set; }
@@ -58,8 +36,9 @@ namespace MonoCube_Timer
         public int DNFOffset { get; set; }
         public int xOffset { get; set; }
 
-        protected List<Time> allTimes; // Stores the full data of the class (reference data)
-        protected List<int> filterTimes; // Stores the indices of times to be displayed, and can be configured
+
+        protected List<Time> displayTimes; // Stores only the times that will be displayed
+        protected List<Time> allTimes; // Stores the full data of the class
 
         public int VerticalOffset { get; set; } //Changes on scroll
 
@@ -72,7 +51,6 @@ namespace MonoCube_Timer
         bool XHover;
 
         public ContainerDisplayState DisplayState { get; set; }
-        protected Filter filter;
         public bool DisplaySeparaterLines { get; set; }
 
         protected bool ButtonsEnabled;
@@ -91,15 +69,15 @@ namespace MonoCube_Timer
         public ScrollContainer(GameContent gameContent, SpriteBatch spriteBatch, SpriteFont textFont, SpriteFont textFontBold) : base()
         {
             allTimes = new List<Time>();
-            filterTimes = new List<int>();
+            displayTimes = new List<Time>();
             VerticalOffset = 0;
 
+            RenderPBs = false;
             Plus2Hover = false;
             DNFHover = false;
             XHover = false;
             ButtonsEnabled = true;
-            DisplayState = ContainerDisplayState.InvertButtons;
-            this.filter = new Filter(false, false);
+            DisplayState = ContainerDisplayState.Buttons;
             DisplaySeparaterLines = true;
 
             this.gameContent = gameContent;
@@ -144,7 +122,7 @@ namespace MonoCube_Timer
         /// </summary>
         public virtual void UpdateCollisionDetection()
         {
-            if (DisplayState == ContainerDisplayState.Buttons || DisplayState == ContainerDisplayState.InvertButtons)
+            if (DisplayState ==ContainerDisplayState.Buttons)
             {
                 Plus2Rectangle = new Rectangle((int)Math.Round((location.X + padding) + (Size.Width - 2 * padding - Plus2Offset)), (int)Math.Round(location.Y + padding), (int)Math.Round(textFont.MeasureString("+2").X), Size.Height - 2 * padding);
                 DNFRectangle = new Rectangle((int)Math.Round((location.X + padding) + (Size.Width - 2 * padding - DNFOffset)), (int)Math.Round(location.Y + padding), (int)Math.Round(textFont.MeasureString("DNF").X), Size.Height - 2 * padding);
@@ -164,55 +142,45 @@ namespace MonoCube_Timer
         /// <param name="times">The new list of Times.</param>
         public void ChangeData(List<Time> times)
         {
-            this.allTimes = times;
-            UpdateFilter();
+            Time[] temp = new Time[times.Count()];
+            times.CopyTo(temp);
+
+            this.allTimes = temp.ToList();
+            UpdateDisplayTimes();
         }
 
-
         /// <summary>
-        /// Clears all display filters in place.
+        /// Toggles whether to render all times or only PB's
         /// </summary>
-        public virtual void ClearFilter()
+        /// <param name="value"></param>
+        public void SetPBRender(bool value)
         {
-            UpdateFilter(new Filter(false, false));
+            RenderPBs = value;
+            UpdateDisplayTimes();
         }
 
-
         /// <summary>
-        /// Filters displayed times by the given parameters.
+        /// Updates the list of times to be displayed based on whether all times or only PB's are displaying.
         /// </summary>
-        /// <param name="displayPBOnly">Specifies whether to display only times that are PB's.</param>
-        /// <param name="displayCommentOnly">Specifies whether to display only times with comments.</param>
-        /// <param name="minDate">Specifies the earliest date displayed times may have, inclusive.</param>
-        /// <param name="maxDate">Specifies the latest date displayed times may have, inclusive.</param>
-        public virtual void UpdateFilter(Filter f)
+        public virtual void UpdateDisplayTimes()
         {
-            this.filter = f;
-            filterTimes = new List<int>();
-
-            for (int i = 0; i < allTimes.Count(); i++)
+            if (!RenderPBs)
             {
-                if ((!f.DisplayPBOnly || allTimes[i].BackColor == Constants.GetColor("TimeBoxPBColor")) &&
-                    (!f.DisplayCommentOnly || allTimes[i].Comments != "") &&
-                    f.MinDate <= allTimes[i].DateRecorded && f.MaxDate >= allTimes[i].DateRecorded)
+                this.displayTimes = new List<Time>();
+                this.displayTimes = this.allTimes;
+            }
+            else
+            {
+                this.displayTimes = new List<Time>();
+                for (int i = 0; i < allTimes.Count(); i++)
                 {
-                    filterTimes.Add(i);
+                    if (allTimes[i].BackColor == Constants.GetColor("TimeBoxPBColor"))
+                    {
+                        displayTimes.Add(allTimes[i]);
+                    }
                 }
             }
-
-            if (DisplayState == ContainerDisplayState.InvertButtons || DisplayState == ContainerDisplayState.InvertDates)
-            {
-                filterTimes.Reverse();
-            }
         }
-        /// <summary>
-        /// Filters displayed times by the current stored parameters.
-        /// </summary>
-        public virtual void UpdateFilter()
-        {
-            UpdateFilter(this.filter);
-        }
-
 
         protected Point oldMousePosition;
         /// <summary>
@@ -223,7 +191,7 @@ namespace MonoCube_Timer
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         public virtual void Update(MouseState newMouseState, MouseState oldMouseState, GameTime gameTime)
         {
-            Update(newMouseState, oldMouseState, gameTime, filterTimes.Count());
+            Update(newMouseState, oldMouseState, gameTime, displayTimes.Count());
         }
         /// <summary>
         /// Updates the Scroll Container.
@@ -241,13 +209,13 @@ namespace MonoCube_Timer
 
             bool newMouseIn = newMouseState.X >= Location.X + padding && newMouseState.X <= Location.X + Size.Width - padding && newMouseState.Y >= Location.Y + padding && newMouseState.Y <= Location.Y + Size.Height - padding;
 
-            if (Enabled)
+            if (newMouseIn)
             {
                 VerticalOffset += (int)Math.Round((oldMouseState.ScrollWheelValue - newMouseState.ScrollWheelValue) * gameTime.ElapsedGameTime.TotalSeconds * 60d * Constants.ScrollSpeed);
                 VerticalOffset = Math.Max(0, VerticalOffset);
                 VerticalOffset = Math.Min(VerticalOffset, Math.Max(0, numberOfEntries * timeHeight - (Size.Height - 2 * padding)));
 
-                if (newMouseIn)
+                if (Enabled)
                 {
                     Plus2Hover = Plus2Rectangle.Contains(newMouseState.Position);
                     DNFHover = DNFRectangle.Contains(newMouseState.Position);
@@ -255,12 +223,11 @@ namespace MonoCube_Timer
 
                     if (newMouseState.LeftButton == ButtonState.Released && oldMouseState.LeftButton == ButtonState.Pressed)
                     {
-                        if (ButtonsEnabled && (Plus2Hover || DNFHover || XHover)
-                             && (DisplayState == ContainerDisplayState.Buttons || DisplayState == ContainerDisplayState.InvertButtons))
+                        if (ButtonsEnabled && DisplayState == ContainerDisplayState.Buttons && (Plus2Hover || DNFHover || XHover))
                         {
                             UpdateAdjustableMetadata(newMouseState.Position);
                         }
-                        else if (DisplayState != ContainerDisplayState.Averages)
+                        else
                         {
                             DisplayTimeData(newMouseState.Position);
                         }
@@ -279,29 +246,27 @@ namespace MonoCube_Timer
         {
             int mouseHeight = GetMouseHeight(mousePosition);
 
-            if (filterTimes.Count() <= mouseHeight)
+            if (displayTimes.Count() <= mouseHeight)
             {
                 return;
             }
 
-            Time timeToEdit = allTimes[filterTimes[mouseHeight]];
-            Time oldTime = timeToEdit.Copy();
+            Time oldTime = displayTimes[mouseHeight];
             if (Plus2Hover)
             {
-                timeToEdit.Plus2 = !timeToEdit.Plus2;
-                TimeChanged(timeToEdit, oldTime);
+                displayTimes[mouseHeight] = new Time(displayTimes[mouseHeight].TrueMilliseconds, !displayTimes[mouseHeight].Plus2, displayTimes[mouseHeight].DNF, displayTimes[mouseHeight].DateRecorded, displayTimes[mouseHeight].Puzzle, displayTimes[mouseHeight].TextColor, Constants.GetColor("TimeBoxDefaultColor"), displayTimes[mouseHeight].Scramble, displayTimes[mouseHeight].Comments);
+                TimeChanged(displayTimes[mouseHeight], oldTime);
             }
             else if (DNFHover)
             {
-                timeToEdit.DNF = !timeToEdit.DNF;
-                TimeChanged(timeToEdit, oldTime);
+                displayTimes[mouseHeight] = new Time(displayTimes[mouseHeight].TrueMilliseconds, displayTimes[mouseHeight].Plus2, !displayTimes[mouseHeight].DNF, displayTimes[mouseHeight].DateRecorded, displayTimes[mouseHeight].Puzzle, displayTimes[mouseHeight].TextColor, Constants.GetColor("TimeBoxDefaultColor"), displayTimes[mouseHeight].Scramble, displayTimes[mouseHeight].Comments);
+                TimeChanged(displayTimes[mouseHeight], oldTime);
             }
             else if (XHover)
             {
-                TimeDeleted(timeToEdit);
+                displayTimes.RemoveAt(mouseHeight);
+                TimeDeleted(oldTime);
             }
-
-            UpdateFilter();
         }
 
         /// <summary>
@@ -312,14 +277,14 @@ namespace MonoCube_Timer
         {
             int mouseHeight = GetMouseHeight(mousePosition);
 
-            if (filterTimes.Count() > mouseHeight)
+            if (displayTimes.Count() > mouseHeight)
             {
-                DisplayTime(this, allTimes[filterTimes[mouseHeight]]);
+                DisplayTime(this, displayTimes[mouseHeight]);
             }
         }
 
         /// <summary>
-        /// Gets which item in the data list the mouse is currently over.
+        /// Gets the mouse height within the scroll container.
         /// </summary>
         /// <param name="mousePosition">The current mouse position (relative to the entire screen).</param>
         /// <returns></returns>
@@ -361,25 +326,10 @@ namespace MonoCube_Timer
         /// </summary>
         protected virtual void DrawTimes()
         {
-            // Inversion is done by the filter list, so no inversion calculations need be done here
-
             // Sets the number offset so that where there are numbers of different lengths on screen (ie 99 and 100), the longer one is still fully within the time box
-            int filterTopIndex = Math.Min(filterTimes.Count() - 1, (VerticalOffset + Size.Height - 2 * padding) / timeHeight + 1);
-            int filterBottomIndex = VerticalOffset / timeHeight;
-            int maxDisplayedLength = 0;
-            if (filterTopIndex < filterTimes.Count() && filterTopIndex >= 0)
-            {
-                maxDisplayedLength = filterTimes[filterTopIndex].ToString().Length;
-            }
-            if (filterBottomIndex < filterTimes.Count())
-            {
-                maxDisplayedLength = Math.Max(maxDisplayedLength, filterTimes[filterBottomIndex].ToString().Length);
-            }
-
-            NumberOffset = 10 * Math.Max(3, maxDisplayedLength + 1);
+            NumberOffset = 10 * Math.Max(3, (displayTimes.Count() - Math.Max(0, VerticalOffset / timeHeight)).ToString().Length + 1);
             bool hoverIntersect;
-
-            for (int i = Math.Max(0, VerticalOffset / timeHeight); i < filterTimes.Count(); i++)
+            for (int i = Math.Max(0, VerticalOffset / timeHeight); i < displayTimes.Count(); i++)
             {
                 if (padding + i * timeHeight - VerticalOffset > this.Size.Height - padding)
                 {
@@ -393,7 +343,7 @@ namespace MonoCube_Timer
                     spriteBatch.Draw(gameContent.buttonPixel, new Vector2(Location.X + padding, Location.Y + padding + i * timeHeight - VerticalOffset), null, Constants.GetColor("TimeBoxDividerColor"), 0.0f, Vector2.Zero, new Vector2(this.Size.Width - 2 * padding, timeHeight), SpriteEffects.None, ZDepth + 3.5f * Constants.SpriteLevelDepth);
                 }
 
-                DrawTimeBox(allTimes[filterTimes[i]], new Vector2(Location.X + padding, Location.Y + padding + i * timeHeight - VerticalOffset), this.Size.Width - 2 * padding, allTimes[filterTimes[i]].BackColor == null ? Constants.GetColor("TimeBoxDefaultColor") : (Color)allTimes[filterTimes[i]].BackColor, filterTimes[i] + 1, hoverIntersect & Plus2Hover, hoverIntersect & DNFHover, hoverIntersect & XHover);
+                DrawTimeBox(displayTimes[i], new Vector2(Location.X + padding, Location.Y + padding + i * timeHeight - VerticalOffset), this.Size.Width - 2 * padding, displayTimes[i].BackColor == null ? Constants.GetColor("TimeBoxDefaultColor") : (Color)displayTimes[i].BackColor, DisplayState == ContainerDisplayState.Buttons ? displayTimes.Count() - i : i + 1, hoverIntersect & Plus2Hover, hoverIntersect & DNFHover, hoverIntersect & XHover);
             }
 
             // Re-draws the top and bottom bars of the scrollbox so that the time boxes appear to be moving under the edges as they scroll
@@ -427,7 +377,7 @@ namespace MonoCube_Timer
 
             string text = DataProcessing.ConvertMillisecondsToString(time.Milliseconds);
 
-            if (DisplayState == ContainerDisplayState.Buttons || DisplayState == ContainerDisplayState.InvertButtons)
+            if (DisplayState == ContainerDisplayState.Buttons)
             {
                 stringSpace = textFontBold.MeasureString(text);
                 stringSpace = new Vector2(stringSpace.X / 4.0f, stringSpace.Y / 4.0f); //The bold font is downscaled to increase anti-aliasing quality
@@ -450,7 +400,7 @@ namespace MonoCube_Timer
                 if (xHover) { xColor = Constants.GetColor("XHoverColor"); }
                 spriteBatch.DrawString(textFontBold, "X", new Vector2((float)Math.Round(location.X + Size.Width - 2 * padding - xOffset), (float)Math.Round(location.Y + textFromTop)), xColor, 0.0f, new Vector2(0, 0), 0.25f, SpriteEffects.None, ZDepth + 2 * Constants.SpriteLevelDepth);
             }
-            else if (DisplayState == ContainerDisplayState.Dates || DisplayState == ContainerDisplayState.InvertDates)
+            else if (DisplayState == ContainerDisplayState.Dates)
             {
                 if (time.Plus2) { text += " (+2)"; }
                 if (time.DNF) { text = "DNF"; }

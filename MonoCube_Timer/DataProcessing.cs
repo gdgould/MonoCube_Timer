@@ -301,7 +301,7 @@ namespace MonoCube_Timer
         private static string GetFileName(string filePath)
         {
             //Gets the file name from the path, and checks if it is a valid 9+ digit number as well, returning 000000000 otherwise
-            string fileName = filePath.Split(Path.DirectorySeparatorChar)[filePath.Split(Path.DirectorySeparatorChar).Length - 1].Split('.')[0];
+            string fileName = filePath.Split(Path.PathSeparator)[filePath.Split(Path.PathSeparator).Length - 1].Split('.')[0];
 
             if (!int.TryParse(fileName, out int foo) || fileName.Length < 9)
             {
