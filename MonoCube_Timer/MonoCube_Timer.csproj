@@ -44,11 +44,13 @@
   <ItemGroup>
     <Compile Include="AverageDisplayScrollContainer.cs" />
     <Compile Include="Button.cs" />
+    <Compile Include="Calendar.cs" />
     <Compile Include="ConfirmationDialog.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Control.cs" />
     <Compile Include="CubeSelectWindow.cs" />
     <Compile Include="DataProcessing.cs" />
+    <Compile Include="FilterSelectWindow.cs" />
     <Compile Include="Game1.cs" />
     <Compile Include="GameContent.cs" />
     <Compile Include="GenIndex.cs" />

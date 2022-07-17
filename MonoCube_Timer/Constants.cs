@@ -293,6 +293,10 @@ namespace MonoCube_Timer
                     case "buttontextcolor": return new Color(255, 60, 30, 255);
                     case "buttonbordercolor": return new Color(200, 200, 200, 255);
 
+                    case "calendarsquarecolor": return new Color(60, 60, 60, 255);
+                    case "calendartextcolor": return Color.White;
+                    case "calendarhighlightcolor": return new Color(130, 130, 130, 255);
+
                     case "timercolor": return Color.White;
                     case "timerstandby": return new Color(242, 239, 80, 255);
                     case "timerready": return new Color(70, 190, 70, 255);

@@ -429,7 +429,7 @@ namespace MonoCube_Timer
         Time statsTimeViewed; //The time currently being viewed.  Must be global so that its comments can be changed when the viewing window is closed.
 
         CubeSelectWindow cubeSelectWindow; // Used to select a type of cube other than 2x2 through 7x7
-
+        FilterSelectWindow filterSelectWindow; // Used to select a filter to view times through
 
         //Tabs for switching between scrollContainers
         Tab SessionTab; //Left
@@ -467,7 +467,7 @@ namespace MonoCube_Timer
         // Selection buttons
         Button[] buttons; //Cube selection buttons at the bottom
         Button PuzzleSelectButton; // The button for selecting additional/custom cubes
-        Button PBToggleButton; // Toggling PB-only view
+        Button FilterSelectButton; // The button for changing filter settings
 
 
         // Stores the times and averages for the current session
@@ -629,6 +629,7 @@ namespace MonoCube_Timer
             }
         }
 
+
         /// <summary>
         /// Initializes logging and saves the log from the previous session.
         /// </summary>
@@ -665,7 +666,7 @@ namespace MonoCube_Timer
                 buttons[i].Location = new Vector2((float)Math.Round(screenWidth / 2 + (i - 2.5f) * betweenButtonSpace + (i - 3) * buttonWidth), screenHeight - 40 - buttons[i].Height);
             }
 
-            PBToggleButton.Location = new Vector2(360 - PBToggleButton.Width, ScrollContainerHeight - (PBToggleButton.Height + 5));
+            FilterSelectButton.Location = new Vector2(360 - FilterSelectButton.Width, ScrollContainerHeight - (FilterSelectButton.Height + 5));
 
 
             // Displays a custom puzzle name if appropriate, otherwise "Select Puzzle".
@@ -722,6 +723,9 @@ namespace MonoCube_Timer
 
             cubeSelectWindow.Size = statsSize;
             cubeSelectWindow.Location = statsLoc;
+
+            filterSelectWindow.Size = statsSize;
+            filterSelectWindow.Location = statsLoc;
         }
 
         // Initialization functions for LoadContent
@@ -796,53 +800,19 @@ namespace MonoCube_Timer
         /// </summary>
         private void InitializePBButton()
         {
-            PBToggleButton = new Button(gameContent, spriteBatch, gameContent.menuTitleFont);
+            FilterSelectButton = new Button(gameContent, spriteBatch, gameContent.menuTitleFont);
 
-            PBToggleButton.SetText("All Timys"); // The largest possible size.
-            PBToggleButton.AutoSize = false;     // Keeps the button at its largest possible size forever
-            PBToggleButton.SetText("PBs Only");
-            PBToggleButton.ToggleOnClick = true;
-            PBToggleButton.IsToggled = false;
+            FilterSelectButton.SetText("Set Filter");
+            FilterSelectButton.ToggleOnClick = false;
 
-            PBToggleButton.ToggleColor = Constants.GetColor("ButtonToggleColor");
-            PBToggleButton.BackColor = Constants.GetColor("ButtonBackColor");
-            PBToggleButton.BorderColor = Constants.GetColor("ButtonBorderColor");
-            PBToggleButton.TextColor = Constants.GetColor("ButtonTextColor");
+            FilterSelectButton.BackColor = Constants.GetColor("ButtonBackColor");
+            FilterSelectButton.BorderColor = Constants.GetColor("ButtonBorderColor");
+            FilterSelectButton.TextColor = Constants.GetColor("ButtonTextColor");
 
-            PBToggleButton.Visible = true;
-            PBToggleButton.Enabled = true;
+            FilterSelectButton.Visible = true;
+            FilterSelectButton.Enabled = true;
 
-            PBToggleButton.Click += TogglePBView;
-        }
-
-        /// <summary>
-        /// Switches between regular and PB only view
-        /// </summary>
-        /// <param name="arg1">The button sending the event.</param>
-        /// <param name="arg2">The index number of that button</param>
-        private void TogglePBView(object arg1, long arg2)
-        {
-            bool value;
-            if (PBToggleButton.IsToggled)
-            {
-                PBToggleButton.SetText("PBs Only");
-                value = false;
-                Log.Info("PB view toggled on");
-            }
-            else
-            {
-                PBToggleButton.SetText("All Times");
-                value = true;
-                Log.Info("PB view toggled off");
-            }
-
-            PBToggleButton.Location = new Vector2(360 - PBToggleButton.Width, PBToggleButton.Location.Y);
-
-            AllTimes.UpdateFilter(new Filter(value, false));
-            for (int i = 0; i < AllAverages.Length; i++)
-            {
-                AllAverages[i].UpdateFilter(new Filter(value, false));
-            }
+            FilterSelectButton.Click += FilterSelectWindow_Opening;
         }
 
 
@@ -977,44 +947,47 @@ namespace MonoCube_Timer
         /// </summary>
         private void InitializeScrollContainers()
         {
-            CurrentSession = new ScrollContainer(gameContent, spriteBatch, gameContent.menuFont, gameContent.menuFontBold);
+            CurrentSession = new ScrollContainer(gameContent, spriteBatch, gameContent.menuFont, gameContent.menuFontBold)
+            {
+                BackColor = Constants.GetColor("ContainerColor"),
+                DisplaySeparaterLines = true,
+                DisplayState = ContainerDisplayState.InvertButtons,
 
-            CurrentSession.BackColor = Constants.GetColor("ContainerColor");
-            CurrentSession.DisplaySeparaterLines = true;
-            CurrentSession.DisplayState = ContainerDisplayState.InvertButtons;
-
-            CurrentSession.Enabled = true;
-            CurrentSession.Visible = true;
+                Enabled = true,
+                Visible = true
+            };
             CurrentSession.UpdateCollisionDetection();
+            CurrentSession.TimeChanged += TimeChanged;
+            CurrentSession.TimeDeleted += TimeDeleted;
             CurrentSession.DisplayTime += StatsWindow_Opening;
 
 
-            AllTimes = new ScrollContainer(gameContent, spriteBatch, gameContent.menuFont, gameContent.menuFontBold);
+            AllTimes = new ScrollContainer(gameContent, spriteBatch, gameContent.menuFont, gameContent.menuFontBold)
+            {
+                BackColor = Constants.GetColor("ContainerColor"),
+                TimeOffset = 160,
+                NumberOffset = 70,
+                DisplaySeparaterLines = false,
+                DisplayState = ContainerDisplayState.Dates,
 
-            AllTimes.BackColor = Constants.GetColor("ContainerColor");
-            AllTimes.TimeOffset = 160;
-            AllTimes.NumberOffset = 70;
-            AllTimes.DisplaySeparaterLines = false;
-            AllTimes.DisplayState = ContainerDisplayState.Dates;
-
-            AllTimes.Enabled = true;
-            AllTimes.Visible = true;
-            CurrentSession.TimeChanged += TimeChanged;
-            CurrentSession.TimeDeleted += TimeDeleted;
+                Enabled = true,
+                Visible = true
+            };
             AllTimes.DisplayTime += StatsWindow_Opening;
 
 
             AllAverages = new AverageDisplayScrollContainer[7];
             for (int i = 0; i < 7; i++)
             {
-                AllAverages[i] = new AverageDisplayScrollContainer(gameContent, spriteBatch, gameContent.menuFont, gameContent.menuFontBold);
+                AllAverages[i] = new AverageDisplayScrollContainer(gameContent, spriteBatch, gameContent.menuFont, gameContent.menuFontBold)
+                {
+                    BackColor = Constants.GetColor("ContainerColor"),
+                    TimeOffset = 160,
+                    NumberOffset = 70,
 
-                AllAverages[i].BackColor = Constants.GetColor("ContainerColor");
-                AllAverages[i].TimeOffset = 160;
-                AllAverages[i].NumberOffset = 70;
-
-                AllAverages[i].Enabled = false;
-                AllAverages[i].Visible = false;
+                    Enabled = false,
+                    Visible = false
+                };
                 AllAverages[i].DisplayTime += StatsWindow_Opening;
             }
         }
@@ -1024,20 +997,33 @@ namespace MonoCube_Timer
         /// </summary>
         private void InitializeDataWindows()
         {
-            timeStatsWindow = new TimeDisplayWindow(gameContent, spriteBatch, new Time(), Vector2.Zero, System.Drawing.Size.Empty, false);
-            timeStatsWindow.Enabled = false;
-            timeStatsWindow.Visible = false;
+            timeStatsWindow = new TimeDisplayWindow(gameContent, spriteBatch, new Time(), Vector2.Zero, System.Drawing.Size.Empty, false)
+            {
+                Enabled = false,
+                Visible = false
+            };
 
             timeStatsWindow.Closing += StatsWindow_Closing;
 
 
-            cubeSelectWindow = new CubeSelectWindow(gameContent, spriteBatch, importData.ListPuzzleNames().ToList(), Vector2.Zero, System.Drawing.Size.Empty);
-            cubeSelectWindow.Enabled = false;
-            cubeSelectWindow.Visible = false;
+            cubeSelectWindow = new CubeSelectWindow(gameContent, spriteBatch, importData.ListPuzzleNames().ToList(), Vector2.Zero, System.Drawing.Size.Empty)
+            {
+                Enabled = false,
+                Visible = false
+            };
 
             cubeSelectWindow.Closing += CubeSelectWindow_Closing;
             cubeSelectWindow.CategoryAdded += CubeSelectWindow_CategoryAdded;
             cubeSelectWindow.CategorySelected += CubeSelectWindow_CategorySelected;
+
+
+            filterSelectWindow = new FilterSelectWindow(gameContent, spriteBatch, Vector2.Zero, System.Drawing.Size.Empty, new Filter(false, false, DateTime.MinValue, DateTime.MaxValue))
+            {
+                Visible = false,
+                Enabled = false
+            };
+
+            filterSelectWindow.Closing += FilterSelectWindow_Closing;
         }
         // End initialization functions
 
@@ -1289,6 +1275,43 @@ namespace MonoCube_Timer
             cubeSelectWindow.Enabled = false;
             cubeSelectWindow.Visible = false;
         }
+
+
+        /// <summary>
+        /// Triggered when the filter selection window is opening.
+        /// </summary>
+        /// <param name="arg1">The button clicked to cause this event.</param>
+        /// <param name="arg2">The index number of the sender.</param>
+        private void FilterSelectWindow_Opening(object arg1, long arg2)
+        {
+            Log.Debug("Filter selection window opening.");
+            statsDisplaying = true;
+            ToggleEverythingEnableState(false);
+
+            filterSelectWindow.SetFilter(CurrentSession.GetFilter());
+            filterSelectWindow.Enabled = true;
+            filterSelectWindow.Visible = true;
+        }
+        /// <summary>
+        /// Triggered when the filter selection window is closing.  Updates the filter for each scrollbox.
+        /// </summary>
+        /// <param name="arg1"></param>
+        private void FilterSelectWindow_Closing(object arg1)
+        {
+            Log.Debug("Filter selection window closing.");
+            statsDisplaying = false;
+            ToggleEverythingEnableState(true);
+
+            CurrentSession.UpdateFilter(filterSelectWindow.GetFilter());
+            AllTimes.UpdateFilter(filterSelectWindow.GetFilter());
+
+            foreach (AverageDisplayScrollContainer a in AllAverages)
+            {
+                a.UpdateFilter(filterSelectWindow.GetFilter());
+            }
+            filterSelectWindow.Enabled = false;
+            filterSelectWindow.Visible = false;
+        }
         // End popup window stuff
 
 
@@ -1298,8 +1321,6 @@ namespace MonoCube_Timer
         /// <param name="value">The truth value to set the enable state to.</param>
         private void ToggleEverythingEnableState(bool value)
         {
-            PBToggleButton.Enabled = value;
-
             foreach (Button b in buttons)
             {
                 b.Enabled = value;
@@ -1323,7 +1344,7 @@ namespace MonoCube_Timer
                 a.Enabled = value;
             }
 
-            PBToggleButton.Enabled = value;
+            FilterSelectButton.Enabled = value;
             PuzzleSelectButton.Enabled = value;
         }
 
@@ -1664,6 +1685,9 @@ namespace MonoCube_Timer
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
+            // Display framerate in title:
+            //Window.Title = Math.Round(1 / gameTime.ElapsedGameTime.TotalSeconds).ToString();
+
             // Pulls new IO states for the program to compare to last tick's
             MouseState newMouseState = Mouse.GetState();
             KeyboardState newKeyboardState = Keyboard.GetState();
@@ -1689,12 +1713,13 @@ namespace MonoCube_Timer
             {
                 timeStatsWindow.Update(newMouseState, oldMouseState, newKeyboardState, oldKeyboardState, gameTime, oldWindowFocus);
                 cubeSelectWindow.Update(newMouseState, oldMouseState, newKeyboardState, oldKeyboardState, gameTime, oldWindowFocus);
+                filterSelectWindow.Update(newMouseState, oldMouseState, newKeyboardState, oldKeyboardState, gameTime, oldWindowFocus);
             }
             else
             {
                 UpdateTimer(newKeyboardState, oldKeyboardState, gameTime);
 
-                PBToggleButton.Update(newMouseState, oldMouseState);
+                FilterSelectButton.Update(newMouseState, oldMouseState);
 
                 // Prevents switching categories while timing
                 if (!timing)
@@ -1906,7 +1931,7 @@ namespace MonoCube_Timer
             {
                 b.Draw();
             }
-            PBToggleButton.Draw();
+            FilterSelectButton.Draw();
             PuzzleSelectButton.Draw();
 
             //Draw the containers
@@ -1932,7 +1957,9 @@ namespace MonoCube_Timer
             // Draw the stats windows
             timeStatsWindow.Draw();
             cubeSelectWindow.Draw();
+            filterSelectWindow.Draw();
 
+            filterSelectWindow.Draw();
 
             spriteBatch.End();
             base.Draw(gameTime);

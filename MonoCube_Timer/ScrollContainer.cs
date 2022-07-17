@@ -90,17 +90,17 @@ namespace MonoCube_Timer
         /// <param name="textFontBold"></param>
         public ScrollContainer(GameContent gameContent, SpriteBatch spriteBatch, SpriteFont textFont, SpriteFont textFontBold) : base()
         {
-            allTimes = new List<Time>();
-            filterTimes = new List<int>();
-            VerticalOffset = 0;
+            this.allTimes = new List<Time>();
+            this.filterTimes = new List<int>();
+            this.VerticalOffset = 0;
 
-            Plus2Hover = false;
-            DNFHover = false;
-            XHover = false;
-            ButtonsEnabled = true;
-            DisplayState = ContainerDisplayState.InvertButtons;
+            this.Plus2Hover = false;
+            this.DNFHover = false;
+            this.XHover = false;
+            this.ButtonsEnabled = true;
+            this.DisplayState = ContainerDisplayState.InvertButtons;
             this.filter = new Filter(false, false);
-            DisplaySeparaterLines = true;
+            this.DisplaySeparaterLines = true;
 
             this.gameContent = gameContent;
             this.spriteBatch = spriteBatch;
@@ -176,7 +176,14 @@ namespace MonoCube_Timer
         {
             UpdateFilter(new Filter(false, false));
         }
-
+        /// <summary>
+        /// Gets the filter the scroll container is currently using.
+        /// </summary>
+        /// <returns></returns>
+        public Filter GetFilter()
+        {
+            return this.filter;
+        }
 
         /// <summary>
         /// Filters displayed times by the given parameters.
@@ -223,7 +230,7 @@ namespace MonoCube_Timer
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         public virtual void Update(MouseState newMouseState, MouseState oldMouseState, GameTime gameTime)
         {
-            Update(newMouseState, oldMouseState, gameTime, filterTimes.Count());
+            Update(newMouseState, oldMouseState, gameTime, this.filterTimes.Count());
         }
         /// <summary>
         /// Updates the Scroll Container.
@@ -241,29 +248,26 @@ namespace MonoCube_Timer
 
             bool newMouseIn = newMouseState.X >= Location.X + padding && newMouseState.X <= Location.X + Size.Width - padding && newMouseState.Y >= Location.Y + padding && newMouseState.Y <= Location.Y + Size.Height - padding;
 
-            if (Enabled)
+            if (Enabled && newMouseIn)
             {
                 VerticalOffset += (int)Math.Round((oldMouseState.ScrollWheelValue - newMouseState.ScrollWheelValue) * gameTime.ElapsedGameTime.TotalSeconds * 60d * Constants.ScrollSpeed);
                 VerticalOffset = Math.Max(0, VerticalOffset);
                 VerticalOffset = Math.Min(VerticalOffset, Math.Max(0, numberOfEntries * timeHeight - (Size.Height - 2 * padding)));
 
-                if (newMouseIn)
-                {
-                    Plus2Hover = Plus2Rectangle.Contains(newMouseState.Position);
-                    DNFHover = DNFRectangle.Contains(newMouseState.Position);
-                    XHover = XRectangle.Contains(newMouseState.Position);
+                Plus2Hover = Plus2Rectangle.Contains(newMouseState.Position);
+                DNFHover = DNFRectangle.Contains(newMouseState.Position);
+                XHover = XRectangle.Contains(newMouseState.Position);
 
-                    if (newMouseState.LeftButton == ButtonState.Released && oldMouseState.LeftButton == ButtonState.Pressed)
+                if (newMouseState.LeftButton == ButtonState.Released && oldMouseState.LeftButton == ButtonState.Pressed)
+                {
+                    if (ButtonsEnabled && (Plus2Hover || DNFHover || XHover)
+                         && (DisplayState == ContainerDisplayState.Buttons || DisplayState == ContainerDisplayState.InvertButtons))
                     {
-                        if (ButtonsEnabled && (Plus2Hover || DNFHover || XHover)
-                             && (DisplayState == ContainerDisplayState.Buttons || DisplayState == ContainerDisplayState.InvertButtons))
-                        {
-                            UpdateAdjustableMetadata(newMouseState.Position);
-                        }
-                        else if (DisplayState != ContainerDisplayState.Averages)
-                        {
-                            DisplayTimeData(newMouseState.Position);
-                        }
+                        UpdateAdjustableMetadata(newMouseState.Position);
+                    }
+                    else if (DisplayState != ContainerDisplayState.Averages)
+                    {
+                        DisplayTimeData(newMouseState.Position);
                     }
                 }
             }

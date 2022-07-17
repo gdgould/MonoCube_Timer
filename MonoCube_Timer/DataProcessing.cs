@@ -4,6 +4,7 @@ using System.Text;
 using System.IO;
 using System.Runtime.InteropServices;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework;
 
 namespace MonoCube_Timer
 {
@@ -88,6 +89,36 @@ namespace MonoCube_Timer
 
             return lines.ToArray();
         }
+
+
+
+        // Adjusts for the fact that string measurement will account for descenders even when the aren't present in the string
+        const int baselineAdjustment = -4;
+        const int baselineAdjustmentNoHanging = -8;
+
+        /// <summary>
+        /// Avoids the problem of font.MeasureString including descenders even when the string doesn't have any.
+        /// </summary>
+        /// <param name="s">The string to measure.</param>
+        /// <returns></returns>
+        public static Vector2 SpecialMeasureText(string s, SpriteFont spriteFont)
+        {
+            Vector2 textSize = spriteFont.MeasureString(s);
+
+            // The MeasureString method does weird things by including the height of decenders even when there aren't any in the string.  This fixes that problem
+            if (s.Contains("g") || s.Contains("j") || s.Contains("p") || s.Contains("q") || s.Contains("y"))
+            {
+                textSize.Y += baselineAdjustment;
+            }
+            else
+            {
+                textSize.Y += baselineAdjustmentNoHanging;
+            }
+
+            return textSize;
+        }
+
+
 
         /// <summary>
         /// Converts the given time to a human-readable string.

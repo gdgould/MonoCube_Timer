@@ -1,8 +1,27 @@
 # Version History
 
-## 0.5.0.1 (In development)
+## 0.5.1.0
 
-Adding cross-platform functionality...
+Added Calendars, the Fitler selection menu, and user-accessible filtering options.
+
+### Features
+
+* Filters can now be selected from the "Set Filter" menu, giving the ability to filter displayed times by PB status, comments, or date range.
+
+### Bugs
+
+* Fixed a bug where scrollboxes would move when the user scrolled from anywhere on screen.
+
+### Code
+
+* Implemented calendars, which can be used to select a date.
+* Added the FilterSelectWindow class.
+* Moved adjusted string measurement into the DataProcessing class, so it is accessible to every class, not just Buttons.
+
+
+## 0.5.0.1
+
+Added cross-platform support and Filter support within the code.
 
 ### Features
 
@@ -13,6 +32,7 @@ Adding cross-platform functionality...
 
 * Fixed a bug where the Logs folder would not auto-generate on a new install, causing an instant crash with no logging.
 * Fixed a bug where after deleting an old time using the stats window delete button, simply closing the dialog would cause whatever time was being displayed to be deleted (for the rest of the session).
+* Fixed a bug where Path.PathSeparator (';' on windows) was sometimes being used instead of Path.DirectorySeparatorChar.
 
 ### Code
 

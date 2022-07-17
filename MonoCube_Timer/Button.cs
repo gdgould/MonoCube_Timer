@@ -9,9 +9,6 @@ namespace MonoCube_Timer
     {
         protected const float textPadding = 6.0f;
 
-        // Adjusts for the fact that string measurement will account for descenders even when the aren't present in the string
-        const int baselineAdjustment = -4;
-        const int baselineAdjustmentNoHanging = -8;
 
         protected int internalBorderSize;
 
@@ -138,7 +135,7 @@ namespace MonoCube_Timer
         /// </summary>
         protected void DetermineSize()
         {
-            Vector2 textSize = SpecialMeasureText(this.Text);
+            Vector2 textSize = DataProcessing.SpecialMeasureText(this.Text, spriteFont);
 
             this.internalSize = new System.Drawing.Size((int)Math.Ceiling(textSize.X + 2 * textPadding), (int)Math.Ceiling(textSize.Y + 2 * textPadding));
 
@@ -153,27 +150,6 @@ namespace MonoCube_Timer
             }
         }
 
-        /// <summary>
-        /// Avoids the problem of font.MeasureString including descenders even when the string doesn't have any
-        /// </summary>
-        /// <param name="s">The string to measure</param>
-        /// <returns></returns>
-        private Vector2 SpecialMeasureText(string s)
-        {
-            Vector2 textSize = spriteFont.MeasureString(s);
-
-            // The MeasureString method does weird things by including the height of decenders even when there aren't any in the string.  This fixes that problem
-            if (s.Contains("g") || s.Contains("j") || s.Contains("p") || s.Contains("q") || s.Contains("y"))
-            {
-                textSize.Y += baselineAdjustment;
-            }
-            else
-            {
-                textSize.Y += baselineAdjustmentNoHanging;
-            }
-
-            return textSize;
-        }
 
 
         /// <summary>
@@ -289,7 +265,7 @@ namespace MonoCube_Timer
 
 
             spriteFont.LineSpacing = 0;
-            Vector2 textSize = SpecialMeasureText(this.Text);
+            Vector2 textSize = DataProcessing.SpecialMeasureText(this.Text, spriteFont);
 
             spriteBatch.DrawString(spriteFont, Text, new Vector2(Location.X + (internalSize.Width - textSize.X) / 2, Location.Y + (internalSize.Height - textSize.Y) / 2), TextColor, 0.0f, new Vector2(0, 0), 1.0f, SpriteEffects.None, Math.Max(0, ZDepth + drawOrderOffset));
         }
