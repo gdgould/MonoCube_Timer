@@ -43,8 +43,8 @@ namespace MonoCube_Timer
         /// </summary>
         /// <param name="displayPBOnly">Specifies whether to display only averages that are PB's.</param>
         /// <param name="displayCommentOnly">No effect on Averages.</param>
-        /// <param name="minDate">Specifies the earliest start date displayed averages may have, inclusive.</param>
-        /// <param name="maxDate">Specifies the latest end date displayed averages may have, inclusive.</param>
+        /// <param name="minDate">Specifies the latest start date displayed averages may have, inclusive.</param>
+        /// <param name="maxDate">Specifies the earliest end date displayed averages may have, inclusive.</param>
         public override void UpdateFilter(Filter f)
         {
             this.filter = f;
@@ -53,7 +53,7 @@ namespace MonoCube_Timer
             for (int i = 0; i < allAverages.Count(); i++)
             {
                 if ((!f.DisplayPBOnly || allAverages[i].BackColor == Constants.GetColor("TimeBoxPBColor")) &&
-                    f.MinDate <= allAverages[i].StartDate && f.MaxDate >= allAverages[i].EndDate)
+                    f.MinDate <= allAverages[i].EndDate && f.MaxDate >= allAverages[i].StartDate)
                 {
                     filterTimes.Add(i);
                 }

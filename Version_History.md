@@ -1,6 +1,6 @@
 # Version History
 
-## 0.5.1.0
+## 0.5.1.0 (July 17, 2022)
 
 Added Calendars, the Fitler selection menu, and user-accessible filtering options.
 
@@ -19,7 +19,7 @@ Added Calendars, the Fitler selection menu, and user-accessible filtering option
 * Moved adjusted string measurement into the DataProcessing class, so it is accessible to every class, not just Buttons.
 
 
-## 0.5.0.1
+## 0.5.0.1 (July 12, 2022)
 
 Added cross-platform support and Filter support within the code.
 
